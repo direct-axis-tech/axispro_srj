@@ -104,6 +104,7 @@ $(function() {
                     var txt_leave_taken = doc.getElementById("leave_taken");
                     var txt_leave_remaining = doc.getElementById("leave_remaining");
                     var txt_days = doc.getElementById("days");
+                    var attachment = doc.getElementById("attachment");
                     
                     txt_leave_taken.value = res.data.history;
                     txt_leave_remaining.value = res.data.balance;
@@ -130,6 +131,11 @@ $(function() {
                             toastr.error("Sorry enterd Days must be less or equal to (" + res.data.balance + ") day(s) remaining...!");
                             txt_days.value = '';
                         }
+                    }
+                    if(leave_type_id == window.leaveTypes.SICK) {
+                        attachment.setAttribute("required", "required");
+                    } else {
+                        attachment.removeAttribute("required");
                     }
                 } else {
                     toastr.error("Something went wrong!");

@@ -147,7 +147,13 @@ class TaskController extends Controller
 
                 $data = [];
                 foreach ($displayableData as $key => $value) {
-                    $data[] = "<span class='text-wrap'>{$key}: {$value}</span>";
+                    if ($key == 'Attachment') { // If Attachment
+                        if(!empty($value)){ // If Attached
+                            $data[] = "<span><a href='" .'../../ERP/company/0/'. $value ."' class='btn btn-sm btn-secondary mt-2' target='_blank'>View Attachment</a></span>";
+                        }
+                    } else {
+                        $data[] = "<span class='text-wrap'>{$key}: {$value}</span>";
+                    }
                 }
                 return implode('<br>', $data);
             })

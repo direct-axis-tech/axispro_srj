@@ -209,6 +209,19 @@ page(trans('Add|Request Employee Leaves'), false, false, '', '', false, '', true
                                 </div>
                             </div>
                             <div class="form-group row">
+                                <label for="attachment" class="col-form-label col-sm-3">Attachment</label>
+                                <div class="col-auto">
+                                    <input type="file" 
+                                    class="form-control-file" 
+                                    name="attachment" 
+                                    id="attachment"
+                                    data-parsley-max-file-size="2"
+                                    accept="image/png, image/jpeg, image/jpg, application/pdf"
+                                    >
+                                    <small class="form-text text-muted">Attach a file (PNG/JPG/JPEG/PDF)</small>
+                                </div>
+                            </div>
+                            <div class="form-group row">
                                 <label for="remarks" class="col-form-label col-sm-3">Remarks</label>
                                 <div class="col-sm-9">
                                     <textarea

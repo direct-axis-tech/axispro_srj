@@ -225,6 +225,14 @@ class AddEmployeeLeaveHelper {
         }
 
         $inputs = self::getValidInputs();
+    
+        if ($inputs['leave_type_id'] == LT_SICK && empty($_FILES['attachment']['name']) && $_FILES['attachment']['error'] != UPLOAD_ERR_OK) {
+            echo json_encode([
+                "status" => 403,
+                "message" => "Please choose an attachment to apply for this leave type...!"
+            ]);
+            exit();
+        }
 
         $daysToAdd = $inputs['days'] - 1;
         $inputs['till'] = $daysToAdd < 1
@@ -242,6 +250,26 @@ class AddEmployeeLeaveHelper {
         }
 
         DB::transaction(function () use ($inputs) {
+          
+            if ($_FILES['attachment']['error'] == UPLOAD_ERR_OK && !empty($_FILES['attachment']['name'])) {
+                $tmp_name = $_FILES['attachment']['tmp_name'];
+                $file_name = basename($_FILES['attachment']['name']);
+                $file_name_without_extension = pathinfo($file_name, PATHINFO_FILENAME);
+                $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
+                $file_name = $file_name_without_extension . '_' . time() . '.' . $file_extension;
+                $uploadPath = company_path() . '/attachments';
+                
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath);
+                }
+
+                $uploadPath .= "/" . clean_file_name($file_name);
+            
+                if (move_uploaded_file($tmp_name, $uploadPath)) {
+                    $inputs['attachment'] = 'attachments/'.$file_name;
+                }
+            }
+
             $leaveId = EmployeeLeave::insertFromInputs($inputs);
             EmployeeLeaveDetail::generateFromLeaveId($leaveId);
 
@@ -263,6 +291,7 @@ class AddEmployeeLeaveHelper {
                 'Requested On' => (new DateTime($inputs['requested_on']))->format(dateformat()),
                 'Days' => $inputs['days'],
                 'Memo' => $inputs['memo'],
+                'Attachment' => $inputs['attachment'] ? $inputs['attachment'] : ''
             ];
             
             $workflow->initiate($data);

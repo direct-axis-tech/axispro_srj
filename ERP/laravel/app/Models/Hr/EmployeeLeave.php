@@ -77,7 +77,8 @@ class EmployeeLeave extends FlowableModel
             "till",
             "requested_on",
             "memo",
-            "is_continuing"
+            "is_continuing",
+            "attachment"
         ];
 
         if(isset($leaveRequest['adjustment_type']) && $leaveRequest['adjustment_type'] === self::CREDIT) {
