@@ -253,7 +253,7 @@ class AddEmployeeLeaveHelper {
           
             if ($_FILES['attachment']['error'] == UPLOAD_ERR_OK && !empty($_FILES['attachment']['name'])) {
                 $tmp_name = $_FILES['attachment']['tmp_name'];
-                $file_name = basename($_FILES['attachment']['name']);
+                $file_name = clean_file_name(basename($_FILES['attachment']['name']));
                 $file_name_without_extension = pathinfo($file_name, PATHINFO_FILENAME);
                 $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
                 $file_name = $file_name_without_extension . '_' . time() . '.' . $file_extension;
@@ -263,7 +263,7 @@ class AddEmployeeLeaveHelper {
                     mkdir($uploadPath);
                 }
 
-                $uploadPath .= "/" . clean_file_name($file_name);
+                $uploadPath .= "/" . $file_name;
             
                 if (move_uploaded_file($tmp_name, $uploadPath)) {
                     $inputs['attachment'] = 'attachments/'.$file_name;
