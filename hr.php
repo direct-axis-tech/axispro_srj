@@ -183,6 +183,15 @@ use App\Permissions as P;
                         route('general-requests.index'),
                         'fa fa-headset'
                     ) ?>
+
+                    <?= createMenuTile(
+                        P::HRM_MANAGE_CIRCULAR,
+                        trans('Manage Circular'),
+                        trans('Manage Circular'),
+                        route('circulars.index'),
+                        'fa fa-cloud-upload-alt'
+                    ) ?>  
+
                 </div>
             </div>
             <!-- End: Manage Section-->
@@ -317,6 +326,14 @@ use App\Permissions as P;
                         trans('Employees Leave Detail Report'),
                         route('leave_report.detail'),
                         'fa-tasks'
+                    ) ?>
+
+                    <?= createMenuTile(
+                        P::HRM_ISSUED_CIRCULAR,
+                        trans('Issued Circulars'),
+                        trans('View Issued Circulars'),
+                        route('circular.issuedCirculars'),
+                        'fa fa-indent'
                     ) ?>
 
                 </div>

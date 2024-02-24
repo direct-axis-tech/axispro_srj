@@ -29,6 +29,7 @@ $(function () {
              this.TASK_REJECTED_NOTIFICATION = 'App\\Notifications\\TaskRejectedNotification';
              this.LABOUR_INSTALLMENT_REMINDER = 'App\\Notifications\\Labour\\InstallmentReminderNotification';
              this.TRANSACTION_NOTIFICATION = 'App\\Notifications\\TransactionAssignedNotification';
+             this.CIRCULAR_ISSUED_NOTIFICATION = 'App\\Notifications\\Hr\\CircularIssuedNotification';
 
             /**
              * Determines if the notification is already initialized
@@ -673,6 +674,13 @@ $(function () {
                         'info',
                         `${notification.data.title} ${notification.data.description}`,
                         `A new ${notification.data.title} (No: ${notification.data.reference}) has been assigned to you. Created By ${notification.data.assigned_by} at ${notification.data.assigned_at}`,
+                    )
+                case this.CIRCULAR_ISSUED_NOTIFICATION:
+                    return this._template1(
+                        notification,
+                        'info',
+                        `${notification.data.title} ${notification.data.reference}`,
+                        `${notification.data.description}`
                     )
                 default:
                     return this._busyTemplate1(notification, 'error')    

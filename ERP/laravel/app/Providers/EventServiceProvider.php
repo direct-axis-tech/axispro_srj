@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\CircularEventSubscriber;
 use App\Listeners\DocumentExpiryEventSubscriber;
 use App\Listeners\TransactionEventSubscriber;
 use App\Listeners\ManageTaskEventSubscriber;
@@ -50,7 +51,8 @@ class EventServiceProvider extends ServiceProvider
     protected $subscribe = [
         TransactionEventSubscriber::class,
         DocumentExpiryEventSubscriber::class,
-        ManageTaskEventSubscriber::class
+        ManageTaskEventSubscriber::class,
+        CircularEventSubscriber::class
     ];
 
     /**

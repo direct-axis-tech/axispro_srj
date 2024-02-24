@@ -984,6 +984,9 @@ class Permissions implements ArrayAccess {
     /** @var string HRM_TASK_PERFORMER_DETAILS Manage Task Performer Name & Time In Manage Task */
     const HRM_TASK_PERFORMER_DETAILS = 'HRM_TASK_PERFORMER_DETAILS';
 
+    /** @var string HRM_MANAGE_CIRCULAR Can Manage Circular */
+    const HRM_MANAGE_CIRCULAR = 'HRM_MANAGE_CIRCULAR';
+
     /*
      |=============================================
      | HRM - reports
@@ -1072,6 +1075,9 @@ class Permissions implements ArrayAccess {
 
     /** @var string HRM_EMP_LEAVE_DETAIL_REPORT_DEP View Employees Leave Detail Report (Dep) */
     const HRM_EMP_LEAVE_DETAIL_REPORT_DEP = 'HRM_EMP_LEAVE_DETAIL_REPORT_DEP';
+
+    /** @var string HRM_ISSUED_CIRCULAR View Issued Circulars */
+    const HRM_ISSUED_CIRCULAR = 'HRM_ISSUED_CIRCULAR';
 
     /*
      |=============================================
@@ -1617,6 +1623,7 @@ class Permissions implements ArrayAccess {
             self::HRM_MANAGE_GENERAL_REQUEST => [G::SS_HRM|42, trans("Manage General Requests (Own)")],
             self::HRM_MANAGE_GENERAL_REQUEST_ALL => [G::SS_HRM|43, trans("Manage General Requests (All)")],
             self::HRM_TASK_PERFORMER_DETAILS    => [G::SS_HRM|44, trans("Display Action Performer Details in Task Management")],
+            self::HRM_MANAGE_CIRCULAR           => [G::SS_HRM|45, trans('Manage Circular')],
 
             self::HRM_VIEWATDMETRICS_OWN        => [G::SS_HRM_A|50, trans("View Attendance Metrics (Own)")],
             self::HRM_VIEWATDMETRICS_DEP        => [G::SS_HRM_A|51, trans("View Attendance Metrics (Dep)")],
@@ -1645,6 +1652,7 @@ class Permissions implements ArrayAccess {
             self::HRM_EMP_LEAVE_DETAIL_REPORT     => [G::SS_HRM_A|74, trans("View Employees Leave Detail Report (All)")],
             self::HRM_EMP_LEAVE_DETAIL_REPORT_OWN => [G::SS_HRM_A|75, trans("View Employees Leave Detail Report (Own)")],
             self::HRM_EMP_LEAVE_DETAIL_REPORT_DEP => [G::SS_HRM_A|76, trans("View Employees Leave Detail Report (Dep)")],
+            self::HRM_ISSUED_CIRCULAR           => [G::SS_HRM_A|77, trans("View Issued Circulars")],
 
             self::WARNINGCATEGORY 	        => [G::SS_HRM_C|1, trans("Warning Category")],
             self::WARNINGGRADE 		        => [G::SS_HRM_C|2, trans("Warning Grade")],

@@ -17,6 +17,7 @@ use App\Http\Controllers\Sales\InvoiceController;
 use App\Http\Controllers\Hr\DesignationController;
 use App\Http\Controllers\Hr\EmpDocReleaseRequestsController;
 use App\Http\Controllers\Hr\BulkEmployeeUploadController;
+use App\Http\Controllers\Hr\CircularController;
 use App\Http\Controllers\Sales\Reports as SalesReport;
 use App\Http\Controllers\Hr\Reports as HrReport;
 use App\Http\Controllers\Labour\Reports as LabourReport;
@@ -119,6 +120,7 @@ Route::group(['middleware' => ['auth']], function() {
         Route::resource('departments', 'Hr\DepartmentController')->only('index', 'store', 'update', 'destroy');
         Route::resource('companies', 'Hr\CompanyController')->only('index', 'store', 'update', 'destroy');
         Route::resource('holidays', 'Hr\HolidayController')->only('index', 'store', 'update', 'destroy');
+        Route::resource('circulars', 'Hr\CircularController')->only('index', 'store', 'destroy');
 
         Route::group(['prefix' => 'employee-pension-config', 'as' => 'employeePensionConfig.'], function () {
             Route::get('/', [EmployeePensionConfigController::class, 'index'])->name('index');
@@ -149,13 +151,10 @@ Route::group(['middleware' => ['auth']], function() {
         Route::post('/pay-elements', [PayElementsController::class, 'store'])->name('payElements.store');
         Route::match(['put', 'patch'], '/pay-elements/{payElement}', [PayElementsController::class, 'update'])->name('payElements.update');
         Route::delete('/pay-elements/{payElement}', [PayElementsController::class, 'destroy'])->name('payElements.destroy');
-
         Route::get('/release-document', [EmpDocReleaseRequestsController::class, 'create'])->name('hr.docReleaseRequest.create');
         Route::post('/release-document', [EmpDocReleaseRequestsController::class, 'store'])->name('hr.docReleaseRequest.store');
-
         Route::get('/shift-report', [HrReport\Shifts::class, 'index'])->name('shiftReport');
         Route::post('/shift-report/export', [HrReport\Shifts::class, 'export'])->name('exportShiftReport');
-
         Route::post('/attendance/update', [AttendanceController::class, 'update'])->name('attendance.update');
         Route::get('/leave-report', [EmpLeaveController::class, 'index'])->name('leave_report.index');
         Route::post('/leave-report/export', [EmpLeaveController::class, 'export'])->name('leave_report.export');
@@ -164,6 +163,9 @@ Route::group(['middleware' => ['auth']], function() {
 
         Route::get('/payrolls/{payroll}/payslip/{employee}/print', [PayslipController::class, 'print'])->name('payslip.print');
         Route::get('/leave-report-detail', [EmpLeaveController::class, 'detailReport'])->name('leave_report.detail');
+        Route::get('/circular-issued', [CircularController::class, 'issuedCirculars'])->name('circular.issuedCirculars');
+        Route::post('/acknowledge/{circular}', [CircularController::class, 'acknowledge'])->name('circular.acknowledge');
+        Route::post('/acknowledge-status/{circular}', [CircularController::class, 'getStatus'])->name('circular.getStatus');
     });
 
     Route::group(['prefix' => 'document-types', 'as' => 'documentTypes.'], function() {
@@ -323,5 +325,6 @@ Route::group(['prefix' => 'api', 'as' => 'api.', 'middleware' => ['auth']], func
         Route::post('/empRewardsDeductions', [EmployeeRewardsDeductionsController::class, 'dataTable'])->name('empRewardsDeductions');
         Route::post('/general-request-type', [GeneralRequestTypeController::class, 'dataTable'])->name('generalRequestTypes');
         Route::post('/general-requests', [GeneralRequestController::class, 'dataTable'])->name('generalRequests');
+        Route::post('/circulars', [CircularController::class, 'dataTable'])->name('circulars');
     });
 });
