@@ -19,7 +19,7 @@
                         <tr>
                             <th>Reference</th>
                             <th>Entity Type</th>
-                            <th>Entity</th>
+                            <!-- <th>Entity</th> -->
                             <th>Memo</th>
                             <th>Circular Date</th>
                             <th>Issued By</th>
@@ -60,9 +60,8 @@
                         <div class="form-group row mt-3 user_entity d-none entities-div">
                             <label class="col-sm-3 col-form-label" for="user_id">User:</label>
                             <div class="col-sm-9">
-                                <select name="user_id" id="user_id" class="form-control entities" data-control="select2" 
-                                data-placeholder=" -- Select --" >
-                                    <option value=""> -- Select User -- </option>
+                                <select name="user_id[]" id="user_id" class="form-control entities" data-control="select2" 
+                                data-placeholder=" -- Select --" multiple >
                                     @foreach ($users as $user)
                                         <option value="{{ $user->id }}">{{ $user->name }}</option>
                                     @endforeach
@@ -73,9 +72,8 @@
                         <div class="form-group row mt-3 employee_entity d-none entities-div">
                             <label class="col-sm-3 col-form-label" for="employee_id">Employee:</label>
                             <div class="col-sm-9">
-                                <select name="employee_id" id="employee_id" class="form-control entities" data-control="select2" 
-                                data-placeholder=" -- Select --" >
-                                    <option value=""> -- Select Employee -- </option>
+                                <select name="employee_id[]" id="employee_id" class="form-control entities" data-control="select2" 
+                                data-placeholder=" -- Select --" multiple >
                                     @foreach ($authorizedEmployees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->formatted_name }}</option>
                                     @endforeach
@@ -86,9 +84,8 @@
                         <div class="form-group row mt-3 group_entity d-none entities-div">
                             <label class="col-sm-3 col-form-label" for="entity_group_id">Entity Group:</label>
                             <div class="col-sm-9">
-                                <select name="entity_group_id" id="entity_group_id" class="form-control entities" data-control="select2" 
-                                data-placeholder=" -- Select --" >
-                                    <option value=""> -- Select Entity Group -- </option>
+                                <select name="entity_group_id[]" id="entity_group_id" class="form-control entities" data-control="select2" 
+                                data-placeholder=" -- Select --" multiple >
                                     @foreach ($entityGroups as $entityGroup)
                                         <option value="{{ $entityGroup->id }}">{{ $entityGroup->name }}</option>
                                     @endforeach
@@ -99,9 +96,8 @@
                         <div class="form-group row mt-3 access_role_entity d-none entities-div">
                             <label class="col-sm-3 col-form-label" for="access_role_id">Access Role:</label>
                             <div class="col-sm-9">
-                                <select name="access_role_id" id="access_role_id" class="form-control entities" data-control="select2" 
-                                data-placeholder=" -- Select --" >
-                                    <option value=""> -- Select Access Role -- </option>
+                                <select name="access_role_id[]" id="access_role_id" class="form-control entities" data-control="select2" 
+                                data-placeholder=" -- Select --" multiple >
                                     @foreach ($accessRoles as $accessRole)
                                         <option value="{{ $accessRole->id }}">{{ $accessRole->name }}</option>
                                     @endforeach
@@ -222,21 +218,25 @@
         $('#entity_type_id').on('change', function() {
 
             var selectedType = $(this).val();
-            $('.entities').val('').trigger('change');
+            $('.entities').val('').removeAttr('data-parsley-required').trigger('change');
             $('.entities-div').addClass('d-none');
 
             switch (selectedType) {
                 case String(entityTypes.USER):
                     $('.user_entity').removeClass('d-none');
+                    $('#user_id').attr('data-parsley-required', true);
                     break;
                 case String(entityTypes.EMPLOYEE):
                     $('.employee_entity').removeClass('d-none');
+                    $('#employee_id').attr('data-parsley-required', true);
                     break;
                 case String(entityTypes.GROUP):
                     $('.group_entity').removeClass('d-none');
+                    $('#entity_group_id').attr('data-parsley-required', true);
                     break;
                 case String(entityTypes.ACCESS_ROLE):
                     $('.access_role_entity').removeClass('d-none');
+                    $('#access_role_id').attr('data-parsley-required', true);
                     break;
                 default:
                     $('.entities-div').addClass('d-none');
@@ -343,11 +343,11 @@
                     title: 'Entity Type',
                     class: 'text-nowrap',
                 },
-                {
-                    data: 'entity_name',
-                    title: 'Entity',
-                    class: 'text-nowrap',
-                },
+                // {
+                //     data: 'entity_name',
+                //     title: 'Entity',
+                //     class: 'text-wrap',
+                // },
                 {
                     data: 'memo',
                     title: 'Memo',
@@ -416,11 +416,11 @@
 
         $('#circular-table').on('click', 'button[data-action="acknowledgement-status"]', function() {
             var data = table.row($(this).closest('tr')).data();
-            $('#acknowledge-table > tbody').html('');
-
+            
             if (ackTable && ackTable !== 'undefined') {
                 ackTable.destroy();
             }
+            $('#acknowledge-table > tbody').html('');
 
             ackTable = $('#acknowledge-table').DataTable({
                 ajax: ajaxRequest({
@@ -461,7 +461,7 @@
             });
 
             $('#acknowledgeModal').modal('show');
-
+            
         });
 
     });

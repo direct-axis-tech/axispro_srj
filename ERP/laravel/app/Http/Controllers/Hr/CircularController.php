@@ -79,16 +79,16 @@ class CircularController extends Controller
             // Assign the appropriate entity ID based on the selected entity type
             switch ($inputs['entity_type_id']) {
                 case Entity::USER:
-                    $circular->entity_id = $inputs['user_id'];
+                    $circular->entity_id = json_encode($inputs['user_id']);
                     break;
                 case Entity::EMPLOYEE:
-                    $circular->entity_id = $inputs['employee_id'];
+                    $circular->entity_id = json_encode($inputs['employee_id']);
                     break;
                 case Entity::GROUP:
-                    $circular->entity_id = $inputs['entity_group_id'];
+                    $circular->entity_id = json_encode($inputs['entity_group_id']);
                     break;
                 case Entity::ACCESS_ROLE:
-                    $circular->entity_id = $inputs['access_role_id'];
+                    $circular->entity_id = json_encode($inputs['access_role_id']);
                     break;
             }
 
@@ -132,15 +132,15 @@ class CircularController extends Controller
     public function getValidatedInputs(Request $request)
     {
         $inputs = $request->validate([
-            'entity_type_id'  => 'required|integer|in:' . implode(',', [Entity::USER, Entity::EMPLOYEE, Entity::GROUP, Entity::ACCESS_ROLE]),
-            'user_id'         => 'nullable|required_if:entity_type_id,'.Entity::USER.'|integer|exists:0_users,id',
-            'employee_id'     => 'nullable|required_if:entity_type_id,'.Entity::EMPLOYEE.'|integer|exists:0_employees,id',
-            'entity_group_id' => 'nullable|required_if:entity_type_id,'.Entity::GROUP.'|integer',
-            'access_role_id'  => 'nullable|required_if:entity_type_id,'.Entity::ACCESS_ROLE.'|integer',
-            'circular_date'   => 'required|date_format:j-M-Y',
-            'memo'            => 'required|string',
-            'file'            => 'required|array|size:1',
-            'file.*'          => 'required|file|mimetypes:application/pdf|max:2048'
+            'entity_type_id'    => 'required|integer|in:' . implode(',', [Entity::USER, Entity::EMPLOYEE, Entity::GROUP, Entity::ACCESS_ROLE]),
+            'user_id.*'         => 'nullable|required_if:entity_type_id,'.Entity::USER.'|integer|exists:0_users,id',
+            'employee_id.*'     => 'nullable|required_if:entity_type_id,'.Entity::EMPLOYEE.'|integer|exists:0_employees,id',
+            'entity_group_id.*' => 'nullable|required_if:entity_type_id,'.Entity::GROUP.'|integer|exists:0_entity_groups,id',
+            'access_role_id.*'  => 'nullable|required_if:entity_type_id,'.Entity::ACCESS_ROLE.'|integer|exists:0_security_roles,id',
+            'circular_date'     => 'required|date_format:j-M-Y',
+            'memo'              => 'required|string',
+            'file'              => 'required|array|size:1',
+            'file.*'            => 'required|file|mimetypes:application/pdf|max:2048'
         ]);
         
         $inputs['circular_date'] = date2sql($inputs['circular_date']);
@@ -173,32 +173,33 @@ class CircularController extends Controller
 
         $builder = Circular::select('0_circulars.*', 'creator.real_name as issued_by',
                         DB::raw(
-                            'COALESCE(
-                                0_users.real_name, 
-                                0_employees.name, 
-                                0_entity_groups.name,
-                                CONVERT(0_security_roles.`role` USING utf8mb4) COLLATE utf8mb4_general_ci
-                            ) AS entity_name'),
+                            "COALESCE(
+                                GROUP_CONCAT(DISTINCT 0_users.real_name SEPARATOR', '), 
+                                GROUP_CONCAT(DISTINCT 0_employees.name SEPARATOR', '), 
+                                GROUP_CONCAT(DISTINCT 0_entity_groups.name SEPARATOR', '),
+                                GROUP_CONCAT(DISTINCT (CONVERT(0_security_roles.`role` USING utf8mb4) COLLATE utf8mb4_general_ci) SEPARATOR', ')
+                            ) AS entity_name"),
                         DB::raw("date_format(`circular_date`, '{$mysqlDateFormat}') as formatted_circular_date"),
                     )
                     ->leftJoin('0_users', function($join) {
-                        $join->on('0_users.id', '=', '0_circulars.entity_id')
+                        $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_users.id)))")
                             ->where('0_circulars.entity_type_id', Entity::USER);
                     })
                     ->leftJoin('0_employees', function($join) {
-                        $join->on('0_employees.id', '=', '0_circulars.entity_id')
+                        $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_employees.id)))")
                             ->where('0_circulars.entity_type_id', Entity::EMPLOYEE);
                     })
                     ->leftJoin('0_entity_groups', function($join) {
-                        $join->on('0_entity_groups.id', '=', '0_circulars.entity_id')
-                        ->where('0_circulars.entity_type_id', Entity::GROUP);
+                        $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_entity_groups.id)))")
+                            ->where('0_circulars.entity_type_id', Entity::GROUP);
                     })
                     ->leftJoin('0_security_roles', function($join) {
-                        $join->on('0_security_roles.id', '=', '0_circulars.entity_id')
-                        ->where('0_circulars.entity_type_id', Entity::ACCESS_ROLE);
+                        $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_security_roles.id)))")
+                            ->where('0_circulars.entity_type_id', Entity::ACCESS_ROLE);
                     })
                     ->leftJoin('0_users as creator', 'creator.id', '0_circulars.created_by')
                     ->where('0_circulars.inactive', 0)
+                    ->groupBy('0_circulars.id')
                     ->orderBy('0_circulars.circular_date');
         
         $dataTable = (new QueryDataTable(DB::query()->fromSub($builder, 't')))
@@ -232,19 +233,19 @@ class CircularController extends Controller
                                  ->where('ack.acknowledged_by', authUser()->id);                              
                         })
                         ->leftJoin('0_users', function($join) {
-                            $join->on('0_users.id', '=', '0_circulars.entity_id')
+                            $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_users.id)))")
                                 ->where('0_circulars.entity_type_id', Entity::USER);
                         })
                         ->leftJoin('0_employees', function($join) {
-                            $join->on('0_employees.id', '=', '0_circulars.entity_id')
+                            $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_employees.id)))")
                                 ->where('0_circulars.entity_type_id', Entity::EMPLOYEE);
                         })
                         ->leftJoin('0_entity_groups', function($join) {
-                            $join->on('0_entity_groups.id', '=', '0_circulars.entity_id')
+                            $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_entity_groups.id)))")
                             ->where('0_circulars.entity_type_id', Entity::GROUP);
                         })
                         ->leftJoin('0_security_roles', function($join) {
-                            $join->on('0_security_roles.id', '=', '0_circulars.entity_id')
+                            $join->whereRaw("JSON_CONTAINS(0_circulars.entity_id, JSON_QUOTE(CONCAT('', 0_security_roles.id)))")
                             ->where('0_circulars.entity_type_id', Entity::ACCESS_ROLE);
                         })
                         ->leftJoin('0_users AS employee_users', 'employee_users.employee_id', '=', '0_employees.id')
@@ -351,26 +352,30 @@ class CircularController extends Controller
                 'sub_c.entity_type_id',
                 'sub_c.entity_id',
                 DB::raw('CASE 
-                            WHEN sub_c.entity_type_id = '. Entity::USER .' THEN 0_users.id
-                            WHEN sub_c.entity_type_id = '. Entity::EMPLOYEE .' THEN employee_users.id
-                            WHEN sub_c.entity_type_id = '. Entity::GROUP .' THEN group_users.id
-                            WHEN sub_c.entity_type_id = '. Entity::ACCESS_ROLE .' THEN role_users.id
+                            WHEN sub_c.entity_type_id = '. Entity::USER .' 
+                                THEN GROUP_CONCAT(DISTINCT 0_users.id)
+                            WHEN sub_c.entity_type_id = '. Entity::EMPLOYEE .' 
+                                THEN GROUP_CONCAT(DISTINCT employee_users.id)
+                            WHEN sub_c.entity_type_id = '. Entity::GROUP .' 
+                                THEN GROUP_CONCAT(DISTINCT group_users.id)
+                            WHEN sub_c.entity_type_id = '. Entity::ACCESS_ROLE .' 
+                                THEN GROUP_CONCAT(DISTINCT role_users.id)
                         END AS notified_user_id')
             ])
             ->leftJoin('0_users', function ($join) {
-                $join->on('0_users.id', '=', 'sub_c.entity_id')
+                $join->whereRaw("JSON_CONTAINS(sub_c.entity_id, JSON_QUOTE(CONCAT('', 0_users.id)))")
                     ->where('sub_c.entity_type_id', Entity::USER);
             })
             ->leftJoin('0_employees', function ($join) {
-                $join->on('0_employees.id', '=', 'sub_c.entity_id')
+                $join->whereRaw("JSON_CONTAINS(sub_c.entity_id, JSON_QUOTE(CONCAT('', 0_employees.id)))")
                     ->where('sub_c.entity_type_id', Entity::EMPLOYEE);
             })
             ->leftJoin('0_entity_groups', function ($join) {
-                $join->on('0_entity_groups.id', '=', 'sub_c.entity_id')
+                $join->whereRaw("JSON_CONTAINS(sub_c.entity_id, JSON_QUOTE(CONCAT('', 0_entity_groups.id)))")
                     ->where('sub_c.entity_type_id', Entity::GROUP);
             })
             ->leftJoin('0_security_roles', function ($join) {
-                $join->on('0_security_roles.id', '=', 'sub_c.entity_id')
+                $join->whereRaw("JSON_CONTAINS(sub_c.entity_id, JSON_QUOTE(CONCAT('', 0_security_roles.id)))")
                     ->where('sub_c.entity_type_id', Entity::ACCESS_ROLE);
             })
             ->leftJoin('0_users AS employee_users', 'employee_users.employee_id', '=', '0_employees.id')
@@ -385,7 +390,12 @@ class CircularController extends Controller
                 'ack.created_at',
             ])
             ->fromSub($subquery, 'circular_notified_users')
-            ->leftJoin('0_users as users', 'users.id', '=', 'circular_notified_users.notified_user_id')
+            // ->leftJoin('0_users as users', function($join){
+            //     $join->whereIn('users.id', 'circular_notified_users.notified_user_id');
+            // })
+            ->leftJoin('0_users as users', function($join) {
+                $join->on(DB::raw("FIND_IN_SET(users.id, circular_notified_users.notified_user_id)"), '>', DB::raw('0'));
+            })           
             ->leftJoin('0_circular_acknowledgement_details AS ack', function($join) {
                 $join->on('ack.circular_id', '=', 'circular_notified_users.circular_id')
                     ->on('ack.acknowledged_by', 'users.id');

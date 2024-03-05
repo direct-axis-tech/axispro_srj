@@ -32,12 +32,13 @@ class CircularEventSubscriber
         $assignedEntity = Entity::find($circular->entity_type_id);
         $initiatedUser = User::find($circular->created_by);
 
-        $notifiables = (new Collection([$initiatedUser]))
-            ->merge($assignedEntity->resolveUsers($circular->entity_id, $initiatedUser))
-            ->unique()
-            ->where('inactive', '0');
+        $notifiables = (new Collection([$initiatedUser]));
 
-        return $notifiables;
+        foreach (json_decode($circular->entity_id, true) as $entityId) {
+            $notifiables = $notifiables->merge($assignedEntity->resolveUsers($entityId, $initiatedUser));
+        }
+
+        return $notifiables->unique()->where('inactive', '0');
     }
 
     /**
