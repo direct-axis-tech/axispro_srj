@@ -166,6 +166,8 @@ Route::group(['middleware' => ['auth']], function() {
         Route::get('/circular-issued', [CircularController::class, 'issuedCirculars'])->name('circular.issuedCirculars');
         Route::post('/acknowledge/{circular}', [CircularController::class, 'acknowledge'])->name('circular.acknowledge');
         Route::post('/acknowledge-status/{circular}', [CircularController::class, 'getStatus'])->name('circular.getStatus');
+        Route::post('circulars/secure-file/{circular}', [CircularController::class, 'viewSecureFile'])->name('circular.view.secure.file');
+        Route::get('circulars/download-file/{circular}', [CircularController::class, 'downloadSecureFile'])->name('circular.download');
     });
 
     Route::group(['prefix' => 'document-types', 'as' => 'documentTypes.'], function() {

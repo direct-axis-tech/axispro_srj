@@ -4,6 +4,25 @@
 
 @section('page')
 
+<style>
+    .modal-xl {
+        max-width: 90%;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    #circularViewer {
+        background-color: #f5f5f5; 
+        text-align: center;
+        width:100%; 
+        height:700px; 
+        overflow-y: auto;
+    }
+
+</style>
+
 <div class="container-fluid">
     <div>
         <h1 class="d-inline-block my-10">Manage Circular</h1>
@@ -191,12 +210,29 @@
         </div>
     </div>
 
-
+    <div class="modal fade" id="viewCircularModal" tabindex="-1" role="dialog" aria-labelledby="viewCircularModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pdfModalLabel">View Circular</h5>
+                    <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="circularViewer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 @endsection
 @push('scripts')
 
+<!-- Include PDF.js library from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js"></script>
 <script>
 
     var entityTypes = {
@@ -214,6 +250,8 @@
         route.push('file.view', '{{ rawRoute('file.view') }}');
         route.push('file.download','{{ rawRoute('file.download') }}');
         route.push('circular.getStatus','{{ rawRoute('circular.getStatus') }}');
+        route.push('circular.view.secure.file','{{ rawRoute('circular.view.secure.file') }}');
+        route.push('circular.download','{{ rawRoute('circular.download') }}');
 
         $('#entity_type_id').on('change', function() {
 
@@ -371,8 +409,8 @@
                     searchable: false,
                     orderable: false,
                     render: function (data) {
-                        var actions = `<a target="_blank" href="${ route('file.view', { name: 'circular', file: data.file }) }" title="View" data-action="view" class="btn btn-sm btn-info btn-view m-1" ><span class="fas fa-eye"></span></a>`;
-                        actions += `<a target="_blank" href="${ route('file.download', { type: 'circular', file: data.file }) }" title="Download" data-action="download" class="btn btn-sm btn-info btn-download m-1" ><span class="fas fa-download"></span></a>`;
+                        var actions = `<a href="#" title="View" data-action="view" class="btn btn-sm btn-info btn-view m-1" data-id="${data.id}" ><span class="fas fa-eye"></span></a>`;
+                        actions += `<a href="#" title="Download" data-action="download" class="btn btn-sm btn-info btn-download m-1" data-id="${data.id}" ><span class="fas fa-download"></span></a>`;
                         actions += `<button data-action="acknowledgement-status" title="Acknowledgement Status" class="btn btn-sm btn-primary m-1" ><span class="fas fa-address-book"></span></button>`;
                         actions += `<button data-action="delete" title="Delete" class="btn btn-sm btn-danger btn-delete m-1" ><span class="fas fa-trash-alt"></span></button>`;
                         return actions;
@@ -463,6 +501,85 @@
             $('#acknowledgeModal').modal('show');
             
         });
+
+        $(document).on('click', '.btn-view', function(e) {
+            e.preventDefault();
+            var circularId = $(this).data('id');
+            var modal = $('#viewCircularModal');
+            var viewer = $('#circularViewer');
+            viewer.html('');
+            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+            // Initialize PDF.js
+            var pdfjsLib = window['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+            $.ajax({
+                method: "POST",
+                url: route('circular.view.secure.file', { circular: circularId }),
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                xhrFields: {
+                    responseType: 'blob' // Important to handle binary data
+                },
+                success: function(response) {
+                    var file = new Blob([response], { type: 'application/pdf' });
+                    var fileURL = URL.createObjectURL(file);
+
+                    pdfjsLib.getDocument(fileURL).promise.then(function(pdfDoc) {
+                        var numPages = pdfDoc.numPages;
+                        renderPagesInOrder(pdfDoc, viewer, 1, numPages);
+                    }).catch(function(error) {
+                        console.error('Error loading PDF:', error);
+                        viewer.html('<div>Error loading PDF</div>');
+                    });
+
+                    modal.modal('show');
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', xhr, status, error);
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to load the PDF file."
+                    });
+                }
+            });
+
+        });
+
+        function renderPagesInOrder(pdfDoc, viewer, currentPage, totalPages) {
+            if (currentPage > totalPages) return; 
+
+            pdfDoc.getPage(currentPage).then(function(page) {
+                var scale = 1.5;
+                var viewport = page.getViewport({ scale: scale });
+
+                var canvas = document.createElement('canvas');
+                var context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                var renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(function() {
+                    viewer.append(canvas);
+                    renderPagesInOrder(pdfDoc, viewer, currentPage + 1, totalPages); 
+                });
+            });
+        }
+
+        $(document).on('click', '.btn-download', function(e) {
+            e.preventDefault();
+            var circularId = $(this).data('id');
+            var downloadUrl = route('circular.download', { circular: circularId });
+
+            window.location.href = downloadUrl;
+        }); 
 
     });
 

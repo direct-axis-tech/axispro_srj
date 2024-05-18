@@ -15,11 +15,13 @@ use App\Models\MetaReference;
 use App\Models\System\AccessRole;
 use App\Permissions;
 use DB;
+use File;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Storage;
 use Yajra\DataTables\QueryDataTable;
 
 class CircularController extends Controller
@@ -113,6 +115,11 @@ class CircularController extends Controller
      */
     public function destroy(Circular $circular)
     {
+        abort_unless(
+            authUser()->hasPermission(Permissions::HRM_MANAGE_CIRCULAR),
+            403
+        );
+
         $result = DB::transaction(function () use ($circular) {
 
             $circular->update(['inactive' => true]);
@@ -218,10 +225,15 @@ class CircularController extends Controller
      */
     public function issuedCirculars(Request $request)
     {
-        abort_unless(
-            authUser()->hasPermission(Permissions::HRM_ISSUED_CIRCULAR),
-            403
-        );
+        abort_unless(authUser()->hasAnyPermission(
+            Permissions::HRM_VIEW_ISSUED_CIRCULAR,
+            Permissions::HRM_DOWNLOAD_ISSUED_CIRCULAR
+        ), 403);
+
+        $canAccess =  [
+            'VIEW' => authUser()->hasPermission(Permissions::HRM_VIEW_ISSUED_CIRCULAR),
+            'DOWNLOAD' => authUser()->hasAnyPermission(Permissions::HRM_DOWNLOAD_ISSUED_CIRCULAR)
+        ];
 
         $mysqlDateFormat = getDateFormatForMySQL();
 
@@ -296,7 +308,7 @@ class CircularController extends Controller
         $resultList = $builder->paginate(15);
         $userInputs = $request->input();
 
-        return view('hr.issuedCirculars', compact('resultList', 'userInputs'));
+        return view('hr.issuedCirculars', compact('resultList', 'userInputs', 'canAccess'));
     }
 
     /**
@@ -307,10 +319,10 @@ class CircularController extends Controller
      */
     public function acknowledge(Request $request, Circular $circular)
     {
-        abort_unless(
-            authUser()->hasPermission(Permissions::HRM_ISSUED_CIRCULAR),
-            403
-        );
+        abort_unless(authUser()->hasAnyPermission(
+            Permissions::HRM_VIEW_ISSUED_CIRCULAR,
+            Permissions::HRM_DOWNLOAD_ISSUED_CIRCULAR
+        ), 403);
 
         // Check if the user has already acknowledged the circular
         $acknowledgeStatus = CircularAcknowledgement::where('circular_id', $circular->id)
@@ -405,6 +417,59 @@ class CircularController extends Controller
 
         return $dataTable->toJson();
 
+    }
+    
+    /**
+     * Get Circualr Details In a Secure Way.
+     * 
+     * @param  \Illuminate\Http\Circular $circular
+     * @return \Illuminate\Http\Response
+     */
+    public function viewSecureFile(Circular $circular)
+    {
+        abort_unless(
+            authUser()->hasPermission(Permissions::HRM_VIEW_ISSUED_CIRCULAR),
+            403
+        );
+
+        $filePath = storage_path('app/'. $circular->file);
+
+        if (!file_exists($filePath)) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        return response()->file($filePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $circular->file . '"',
+        ]);
+    }
+
+    /**
+     * Download Circualr Details In a Secure Way.
+     * 
+     * @param  \Illuminate\Http\Circular $circular
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadSecureFile(Circular $circular)
+    {
+        abort_unless(
+            authUser()->hasPermission(Permissions::HRM_DOWNLOAD_ISSUED_CIRCULAR),
+            403
+        );
+
+        $filePath = $circular->file;
+
+        if (!Storage::exists($filePath)) {
+            $filePath = "/circular/{$filePath}";
+        }
+
+        abort_unless(Storage::exists($filePath), 404);
+        $ext = File::extension(storage_path($filePath));
+
+        return Storage::download(
+            $filePath,
+            'circular_'.date('YmdHis').".$ext"
+        );
     }
 
 }

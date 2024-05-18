@@ -329,9 +329,12 @@ use App\Permissions as P;
                     ) ?>
 
                     <?= createMenuTile(
-                        P::HRM_ISSUED_CIRCULAR,
+                        [
+                            P::HRM_VIEW_ISSUED_CIRCULAR,
+                            P::HRM_DOWNLOAD_ISSUED_CIRCULAR
+                        ],
                         trans('Issued Circulars'),
-                        trans('View Issued Circulars'),
+                        trans('View/Download Issued Circulars'),
                         route('circular.issuedCirculars'),
                         'fa fa-indent'
                     ) ?>

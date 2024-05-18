@@ -1076,8 +1076,11 @@ class Permissions implements ArrayAccess {
     /** @var string HRM_EMP_LEAVE_DETAIL_REPORT_DEP View Employees Leave Detail Report (Dep) */
     const HRM_EMP_LEAVE_DETAIL_REPORT_DEP = 'HRM_EMP_LEAVE_DETAIL_REPORT_DEP';
 
-    /** @var string HRM_ISSUED_CIRCULAR View Issued Circulars */
-    const HRM_ISSUED_CIRCULAR = 'HRM_ISSUED_CIRCULAR';
+    /** @var string HRM_VIEW_ISSUED_CIRCULAR View Issued Circulars */
+    const HRM_VIEW_ISSUED_CIRCULAR = 'HRM_VIEW_ISSUED_CIRCULAR';
+
+    /** @var string HRM_DOWNLOAD_ISSUED_CIRCULAR Download Issued Circulars */
+    const HRM_DOWNLOAD_ISSUED_CIRCULAR = 'HRM_DOWNLOAD_ISSUED_CIRCULAR';
 
     /*
      |=============================================
@@ -1652,7 +1655,8 @@ class Permissions implements ArrayAccess {
             self::HRM_EMP_LEAVE_DETAIL_REPORT     => [G::SS_HRM_A|74, trans("View Employees Leave Detail Report (All)")],
             self::HRM_EMP_LEAVE_DETAIL_REPORT_OWN => [G::SS_HRM_A|75, trans("View Employees Leave Detail Report (Own)")],
             self::HRM_EMP_LEAVE_DETAIL_REPORT_DEP => [G::SS_HRM_A|76, trans("View Employees Leave Detail Report (Dep)")],
-            self::HRM_ISSUED_CIRCULAR           => [G::SS_HRM_A|77, trans("View Issued Circulars")],
+            self::HRM_VIEW_ISSUED_CIRCULAR      => [G::SS_HRM_A|77, trans("View Issued Circulars")],
+            self::HRM_DOWNLOAD_ISSUED_CIRCULAR  => [G::SS_HRM_A|78, trans("Download Issued Circulars")],
 
             self::WARNINGCATEGORY 	        => [G::SS_HRM_C|1, trans("Warning Category")],
             self::WARNINGGRADE 		        => [G::SS_HRM_C|2, trans("Warning Grade")],
