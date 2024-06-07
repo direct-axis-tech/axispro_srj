@@ -140,9 +140,13 @@ class CircularController extends Controller
     {
         $inputs = $request->validate([
             'entity_type_id'    => 'required|integer|in:' . implode(',', [Entity::USER, Entity::EMPLOYEE, Entity::GROUP, Entity::ACCESS_ROLE]),
+            'user_id'           => 'nullable|required_if:entity_type_id,'.Entity::USER.'|array',
             'user_id.*'         => 'nullable|required_if:entity_type_id,'.Entity::USER.'|integer|exists:0_users,id',
+            'employee_id'       => 'nullable|required_if:entity_type_id,'.Entity::EMPLOYEE.'|array',
             'employee_id.*'     => 'nullable|required_if:entity_type_id,'.Entity::EMPLOYEE.'|integer|exists:0_employees,id',
+            'entity_group_id'   => 'nullable|required_if:entity_type_id,'.Entity::GROUP.'|array',
             'entity_group_id.*' => 'nullable|required_if:entity_type_id,'.Entity::GROUP.'|integer|exists:0_entity_groups,id',
+            'access_role_id'    => 'nullable|required_if:entity_type_id,'.Entity::ACCESS_ROLE.'|array',
             'access_role_id.*'  => 'nullable|required_if:entity_type_id,'.Entity::ACCESS_ROLE.'|integer|exists:0_security_roles,id',
             'circular_date'     => 'required|date_format:j-M-Y',
             'memo'              => 'required|string',
