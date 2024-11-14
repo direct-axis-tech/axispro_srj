@@ -277,22 +277,26 @@ class CircularController extends Controller
 
             $builder->orWhere(function (Builder $query) {
                         $query->where('0_circulars.entity_type_id', Entity::USER)
-                            ->where('0_users.id', authUser()->id);
+                            ->where('0_users.id', authUser()->id)
+                            ->where('0_users.inactive', 0);
             });
 
             $builder->orWhere(function (Builder $query) {
                 $query->where('0_circulars.entity_type_id', Entity::EMPLOYEE)
-                    ->where('employee_users.id', authUser()->id);
+                    ->where('employee_users.id', authUser()->id)
+                    ->where('employee_users.inactive', 0);
             });
 
             $builder->orWhere(function (Builder $query) {
                 $query->where('0_circulars.entity_type_id', Entity::GROUP)
-                    ->where('group_users.id', authUser()->id);
+                    ->where('group_users.id', authUser()->id)
+                    ->where('group_users.inactive', 0);
             });
 
             $builder->orWhere(function (Builder $query) {
                 $query->where('0_circulars.entity_type_id', Entity::ACCESS_ROLE)
-                    ->where('role_users.id', authUser()->id);
+                    ->where('role_users.id', authUser()->id)
+                    ->where('role_users.inactive', 0);
             });
 
         });
@@ -410,7 +414,8 @@ class CircularController extends Controller
             //     $join->whereIn('users.id', 'circular_notified_users.notified_user_id');
             // })
             ->leftJoin('0_users as users', function($join) {
-                $join->on(DB::raw("FIND_IN_SET(users.id, circular_notified_users.notified_user_id)"), '>', DB::raw('0'));
+                $join->on(DB::raw("FIND_IN_SET(users.id, circular_notified_users.notified_user_id)"), '>', DB::raw('0'))
+                    ->where('users.inactive', 0);
             })           
             ->leftJoin('0_circular_acknowledgement_details AS ack', function($join) {
                 $join->on('ack.circular_id', '=', 'circular_notified_users.circular_id')
