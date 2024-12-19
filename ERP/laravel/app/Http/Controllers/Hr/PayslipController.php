@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Hr;
 
 use App\Http\Controllers\Controller;
+use App\Models\Accounting\JournalTransaction;
 use App\Models\Hr\Employee;
 use App\Models\Hr\Payroll;
 use App\Models\Hr\Payslip;
+use App\Models\SentHistory;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PayslipController extends Controller
@@ -135,6 +139,22 @@ class PayslipController extends Controller
      */
     public function print(Request $request, Payroll $payroll, Employee $employee)
     {
+        $payslipPath = $this->generatePayslipPdf($payroll, $employee);
+        
+        return response()->file($payslipPath, [
+            'Content-Disposition' => 'inline; filename="' . $payslipPath . '"',
+        ]);
+    }
+    
+    /**
+     * generatePayslipPdf
+     *
+     * @param  mixed $payroll
+     * @param  mixed $employee
+     * @return string $filePath
+     */
+    public function generatePayslipPdf(Payroll $payroll, Employee $employee)
+    {
         abort_unless($payroll->is_processed, 404);
         abort_unless(
             Payslip::query()
@@ -153,8 +173,83 @@ class PayslipController extends Controller
 
         $mpdf->Output($filePath, \Mpdf\Output\Destination::FILE);
 
-        return response()->file($filePath, [
-            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
-        ]);
+        return $filePath;
+    }
+
+    /**
+     * Send payslip emails to all employees for a payroll
+     *
+     * @param int $payrollId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public static function sendPayslipEmail($payrollId, $employeeId = null)
+    {
+        if (empty(config('mail.driver')) || empty(config('mail.host')) || empty(config('mail.username')) || empty(config('mail.password'))) {
+            \Log::error('Email configuration is missing. Skipping email-sending process.');
+            return response()->json(['error' => 'Email configuration is missing.'], 500);
+        }
+    
+        $payroll = Payroll::find($payrollId);
+    
+        if (!$payroll) {
+            return response()->json(['error' => 'Invalid payroll ID.'], 404);
+        }
+    
+        $payslips = Payslip::query()
+            ->where('payroll_id', $payrollId)
+            ->with(['employee']);
+    
+        if ($employeeId) {
+            $payslips->where('employee_id', $employeeId);
+        }
+    
+        $payslips->chunk(50, function ($chunk) use ($payroll) {
+            foreach ($chunk as $payslip) {
+                $employee = $payslip->employee;
+    
+                if (!$employee || empty($employee->email)) {
+                    \Log::warning("Skipping payslip email for employee ID {$payslip->employee_id}: No email found.");
+                    continue;
+                }
+    
+                try {
+                    $pdfPath = app(PayslipController::class)->generatePayslipPdf($payroll, $employee);
+                    $payrollMonth = DateTime::createFromFormat('!m', $payroll->month)->format('F');
+                    
+                    $mailBody = "Dear {$employee->name},\n\n"
+                        . "Please find your payslip for the month of {$payrollMonth}, {$payroll->year} attached.\n\n"
+                        . "Regards,\nHR Department";
+    
+                    Mail::send([], [], function ($message) use ($employee, $mailBody, $pdfPath, $payrollMonth, $payroll) {
+                        $message->to($employee->email)
+                            ->subject('Payslip For The Month Of ' . $payrollMonth . ', ' . $payroll->year)
+                            ->attach($pdfPath, [
+                                'as' => 'Payslip.pdf',
+                                'mime' => 'application/pdf',
+                            ])
+                            ->setBody($mailBody, 'text/plain');
+                    });
+    
+                    SentHistory::create([
+                        'trans_type' => JournalTransaction::PAYROLL,
+                        'trans_no' => $payroll->id,
+                        'trans_ref' => $payslip->id,
+                        'content' => "Payslip of {$employee->name} for {$payrollMonth}, {$payroll->year}",
+                        'sent_through' => NT_EMAIL,
+                        'sent_to' => $employee->email,
+                        'sent_at' => now(),
+                        'resource_ref' => auth()->id(),
+                    ]);
+    
+                    if (file_exists($pdfPath)) {
+                        unlink($pdfPath);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send payslip email to employee ID {$payslip->employee_id}: " . $e->getMessage());
+                }
+            }
+        });
+    
+        return response()->json(['message' => 'Payslip emails sent successfully.'], 200);
     }
 }

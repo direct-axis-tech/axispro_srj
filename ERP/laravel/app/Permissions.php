@@ -986,6 +986,9 @@ class Permissions implements ArrayAccess {
 
     /** @var string HRM_MANAGE_CIRCULAR Can Manage Circular */
     const HRM_MANAGE_CIRCULAR = 'HRM_MANAGE_CIRCULAR';
+    /** @var string HRM_MANAGE_PAYSLIP_MAIL Manage Payslip Emailing */
+    const HRM_MANAGE_PAYSLIP_MAIL = 'HRM_MANAGE_PAYSLIP_MAIL';
+
 
     /*
      |=============================================
@@ -1627,6 +1630,7 @@ class Permissions implements ArrayAccess {
             self::HRM_MANAGE_GENERAL_REQUEST_ALL => [G::SS_HRM|43, trans("Manage General Requests (All)")],
             self::HRM_TASK_PERFORMER_DETAILS    => [G::SS_HRM|44, trans("Display Action Performer Details in Task Management")],
             self::HRM_MANAGE_CIRCULAR           => [G::SS_HRM|45, trans('Manage Circular')],
+            self::HRM_MANAGE_PAYSLIP_MAIL   => [G::SS_HRM|46, trans("Send Payslip via Email")],
 
             self::HRM_VIEWATDMETRICS_OWN        => [G::SS_HRM_A|50, trans("View Attendance Metrics (Own)")],
             self::HRM_VIEWATDMETRICS_DEP        => [G::SS_HRM_A|51, trans("View Attendance Metrics (Dep)")],

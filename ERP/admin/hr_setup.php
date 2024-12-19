@@ -138,7 +138,8 @@ function can_process()
 		'public_holiday_rate' => 'Public Holiday Rate',
 		'payroll_cutoff' => 'Payroll Cutoff Date',
 		'overtime_rate' => 'Overtime Rate',
-		'personal_timeout_calculation_method' => 'Personal Timeout Calculation'
+		'personal_timeout_calculation_method' => 'Personal Timeout Calculation',
+		'auto_payslip_email' => 'Auto Email Payslips To Employees On Payroll Finalization'
 	];
 
 	foreach (GCC_COUNTRIES as $code => $name) {
@@ -257,7 +258,8 @@ if (isset($_POST['submit']) && can_process())
             'overtime_salary_elements',
             'holidays_salary_elements',
             'personal_timeout_calculation_method',
-            'rewards_bonus_el'
+            'rewards_bonus_el',
+			'auto_payslip_email'
         ),
         array_map(
             function ($c) { return 'gpssa_employee_share_'.strtolower($c); },
@@ -363,6 +365,7 @@ $_POST['overtime_salary_elements'] = explode(",", $myrow['overtime_salary_elemen
 $_POST['holidays_salary_elements'] = explode(",", $myrow['holidays_salary_elements']);
 $_POST['personal_timeout_calculation_method'] = $myrow['personal_timeout_calculation_method'];
 $_POST['rewards_bonus_el'] = $myrow['rewards_bonus_el'];
+$_POST['auto_payslip_email'] = $myrow['auto_payslip_email'];
 
 //---------------
 
@@ -426,6 +429,7 @@ gl_all_accounts_list_row(trans("Default. Salary Payable Account:"), 'default_sal
 gl_all_accounts_list_row(trans("Pension Expense Account:"), 'pension_expense_account', null, false, false, '-- select --');
 array_selector_row(trans("Personal Timeout Calculation:"), 'personal_timeout_calculation_method', null, personal_timeout_calculation_methods());
 check_row(trans("Generate Auto Journal For Deduction Entry :"), 'auto_journal_deduction_entry');
+check_row(trans("Automatically Email Payslips To Employees On Payroll Finalization :"), 'auto_payslip_email');
 
 table_section_title(trans("Departments"));
 

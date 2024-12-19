@@ -355,6 +355,7 @@ $months = array_map(function($month) {
                         Finalize the Payroll
                         <span class="ml-2 la la-check" style="font-size: 2rem"></span>
                     </button>
+                    <input type="hidden" name="auto_payslip_email" id="auto_payslip_email" value="<?= pref('hr.auto_payslip_email', 0) ?>">
                     <button
                         disabled
                         id="post_gl"
@@ -384,5 +385,5 @@ $months = array_map(function($month) {
 <script src="<?= $path_to_root ?>/../assets/plugins/general/toastr/build/toastr.min.js" type="text/javascript"></script>
 <script src="<?= $path_to_root ?>/../assets/plugins/general/parsley/parsley.min.js" type="text/javascript"></script>
 <script src="<?= $path_to_root ?>/../assets/plugins/general/sweetalert2/dist/sweetalert2.min.js" type="text/javascript"></script>
-<script src="<?= $path_to_root ?>/hrm/js/payroll.js?v1.2.0" type="text/javascript"></script>
+<script src="<?= $path_to_root ?>/hrm/js/payroll.js?v1.2.1" type="text/javascript"></script>
 <?php $GLOBALS['__FOOT__'][] = ob_get_clean(); end_page();?>

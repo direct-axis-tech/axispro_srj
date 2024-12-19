@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Hr\PayslipController;
+use App\Jobs\Hr\SendPayslipEmailJob;
 use App\Models\Hr\Company;
 $path_to_root = "..";
 $page_security = 'HRM_VIEWPAYSLIP';
@@ -31,6 +32,12 @@ $renderedHtml = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($selected_employee) {
+
+        if(isset($_POST['mail_payslip']) && $selected_employee != -1) {
+            SendPayslipEmailJob::dispatchNow($payrollId, $selected_employee);
+            $_SESSION['message'] = trans('Payslip sent successfully.');
+        }
+
         $renderedHtml = app(PayslipController::class)->render($payrollId, $selected_employee);
     }
 }
@@ -127,10 +134,20 @@ $companies = Company::orderBy('name')->get();
                         <div class="col-auto">
                             <button type="submit" id="view_payslip" name="action" value="view_payslip" class="btn btn-primary mx-3 shadow-none"><?= trans('View Payslip') ?></button>
                             <button type="button" id="print_payslip" name="action" value="print_payslip" class="btn btn-primary mx-3 shadow-none"><?= trans('Print Payslip') ?></button>
+                            <?php if(user_check_access('HRM_MANAGE_PAYSLIP_MAIL') && $_SERVER['REQUEST_METHOD'] == 'POST') { #first need to view the payslip ?>
+                                <button type="submit" id="mail_payslip" name="mail_payslip" value="mail_payslip" class="btn btn-primary mx-3 shadow-none"><i class="fa fa-envelope"></i> <?= trans('Send Payslip via Email') ?></button>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>
         </form>
+        
+        <?php if (isset($_SESSION['message'])): ?>
+            <script type="text/javascript">
+                toastr.success("<?= $_SESSION['message']; ?>");
+            </script>
+            <?php unset($_SESSION['message']); ?>
+        <?php endif; ?>
 
         <div class="table-responsive mx-auto" style="width: 1000px;">
             <?php if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -144,7 +161,7 @@ $companies = Company::orderBy('name')->get();
 <script src="<?= $path_to_root ?>/../assets/plugins/general/toastr/build/toastr.min.js" type="text/javascript"></script>
 <script src="<?= $path_to_root ?>/../assets/plugins/general/parsley/parsley.min.js" type="text/javascript"></script>
 <script src="<?= $path_to_root ?>/../assets/plugins/general/sweetalert2/dist/sweetalert2.min.js" type="text/javascript"></script>
-<script src="<?= $path_to_root ?>/hrm/js/payslip_001.js" type="text/javascript"></script>
+<script src="<?= $path_to_root ?>/hrm/js/payslip_001.js?v0.0.1" type="text/javascript"></script>
 <script>
 route.push('payslip.print', '<?= rawRoute('payslip.print') ?>')
 $(function () {

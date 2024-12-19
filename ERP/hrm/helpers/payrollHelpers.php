@@ -3,6 +3,7 @@
 use App\Http\Controllers\Sales\Reports\AdheedEmployeeCommission;
 use App\Http\Controllers\Sales\Reports\TypingCommission;
 use App\Jobs\Hr\GenerateAttendanceJob;
+use App\Jobs\Hr\SendPayslipEmailJob;
 use App\Models\Accounting\JournalTransaction;
 use App\Models\Entity;
 use App\Models\Hr\Company;
@@ -2170,6 +2171,10 @@ class PayrollHelpers {
         processPayroll($payroll['id']);
 
         EmployeeRewardsDeductions::updateInstallmentProcessedStatus($payroll['id']);
+
+        if(pref('hr.auto_payslip_email', 0)) {
+            SendPayslipEmailJob::dispatch($payroll['id']);
+        }
 
         echo json_encode([
             "status" => 200,

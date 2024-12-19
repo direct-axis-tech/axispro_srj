@@ -54,6 +54,8 @@ $(function() {
 
     // handle the finalize button that will process the payroll once and for all
     $('#' + finalizeBtnId).on('click', function(ev) {
+        let element = this;
+
         if (!storage.activeFilters) {
             return toastr.error('Please select the payroll');
         }
@@ -62,27 +64,48 @@ $(function() {
             return toastr.error('This payroll is already finalized');
         }
 
-        var data = {[this.name]: this.value};
-        for (var key in storage.activeFilters) {
-            data[key] = storage.activeFilters[key];
+        if ($('#auto_payslip_email').val() == '1') {  
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This action will email payslips to employees & Please make sure that all the information is correct!",
+                type: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Process!'
+            }).then(function(result) {
+                if (result.value) {
+                    processPayroll(element);
+                }
+            });
+        } else {
+            processPayroll(element);
         }
 
-        setBusyState();
-        $.ajax({
-            url: filterFormElem.action,
-            method: 'post',
-            data: data,
-            dataType: 'json'
-        }).done(function (res) {
-            if (res && res.status == 200) {
-                toastr.success("Payroll processed successfully");
-                refreshTable(storage.activeFilters);
-            } else {
-                toastr.error((res && res.message) ? res.message : "Something went wrong!");
+        function processPayroll(clickedElement) {
+
+            var data = {[clickedElement.name]: clickedElement.value};
+            for (var key in storage.activeFilters) {
+                data[key] = storage.activeFilters[key];
             }
-        }).fail(function (xhr) {
-            toastr.error("Somthing went wrong!")
-        }).always(unsetBusyState);
+
+            setBusyState();
+            $.ajax({
+                url: filterFormElem.action,
+                method: 'post',
+                data: data,
+                dataType: 'json'
+            }).done(function (res) {
+                if (res && res.status == 200) {
+                    toastr.success("Payroll processed successfully");
+                    refreshTable(storage.activeFilters);
+                } else {
+                    toastr.error((res && res.message) ? res.message : "Something went wrong!");
+                }
+            }).fail(function (xhr) {
+                toastr.error("Somthing went wrong!")
+            }).always(unsetBusyState);
+        }
     });
 
     // handle the POST GL button process

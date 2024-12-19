@@ -83,4 +83,9 @@ $(function() {
             $(employeesElem).select2({data: dataSource})
         }
     })();
+
+    $('#payroll_id, #department, #working_company_id, #employees').on('change', function(e) {
+        $('#mail_payslip').addClass('d-none');
+    });
+    
 });
