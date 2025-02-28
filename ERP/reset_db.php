@@ -6,44 +6,67 @@
 // BACKUP BEFORE YOU RUN IT!!!
 // IF YOU DON'T KNOW EXACTLY WHAT YOUR ARE DOING, DON'T RUN THIS SCRIPT
 
-// ask for input
-fwrite(STDOUT, "Enter your MySQL FrontAccounting database name: ");
-// get input
-$db = get_input();
+function parse_input() {
+    $options = getopt("ftyd:c:h:u:p:", ["db:", "company:", "host:", "user:", "password:", "full-reset", 'transactions-only', 'confirm']);
+    $args = [
+        'db' => $options['d'] ?? $options['db'] ?? null,
+        'company_number' => $options['c'] ?? $options['company'] ?? '0',
+        'host' => $options['h'] ?? $options['host'] ?? 'localhost',
+        'userid' => $options['u'] ?? $options['user'] ?? 'root',
+        'pword' => $options['p'] ?? $options['password'] ?? null,
+        'clean' => (isset($options['t']) || isset($options['transactions-only']))
+            ? false
+            : ((isset($options['f']) || isset($options['full-reset'])) ? true : null),
+        'confirmed' => isset($options['y']) || isset($options['confirm'])
+    ];
 
-fwrite(STDOUT, "Enter your Company Number eg. 1, 2 etc [0]: ");
-// get input
-$company_number = get_input('0');
+    if (!$args['db']) {
+        fwrite(STDOUT, "Enter your MySQL FrontAccounting database name: ");
+        $args['db'] = get_input();
+    }
 
-// ask for input
-fwrite(STDOUT, "Enter your MySQL host [localhost]: ");
-// get input
-$host = get_input('localhost');
+    if ($args['pword'] === null) {
+        fwrite(STDOUT, "Enter your MySQL password: ");
+        $args['pword'] = get_input();
+    }
 
-fwrite(STDOUT, "Enter your MySQL user id [root]: ");
-// get input
-$userid = get_input('root');
+    if ($args['clean'] === null) {
+        fwrite(STDOUT, "Do you want a full reset(F) or just transactions(T)?[T]: ");
+        $args['clean'] = get_input('T') == 'F';
+    }
 
-fwrite(STDOUT, "Enter your MySQL password: ");
-// get input
-$pword = get_input();
+    if (!$args['confirmed']) {
+        $action = $args['clean'] ? 'perform a clean reset including master data' : 'clear all the transactions';
+        $bold = "\033[1m";
+        $red = "\033[31m";
+        $reset = "\033[0m";
+        fwrite(
+            STDOUT,
+            (
+                "You are going to {$bold}{$red}{$action}{$reset}\n"
+                . "    host:           {$args['host']}\n"
+                . "    user:           {$args['userid']}\n"
+                . "    password:       {$args['pword']}\n"
+                . "    database:       {$args['db']}\n"
+                . "    company number: {$args['company_number']}\n"
+                . "Are you absolutely sure you want to do this? (Y/N)[N]: "
+            )
+        );
+        $confirm = trim(fgets(STDIN));
+        if ($confirm != "Y") {
+            echo "OK. Aborting...\n";
+            exit();
+        }
+    }
 
-fwrite(STDOUT, "Do you want a full reset(F) or just transactions(T)?[T]: ");
-// get input
-$clean = get_input('T') == 'F';
-
-// Confirmation - must be Y in capitals, or I stop right here.
-fwrite(STDOUT, "You are going to clear the database : $db company number : $company_number\n" . "Are you absolutely sure you want to do this? (Y/N)");
-$confirm = trim(fgets(STDIN));
-if ($confirm!="Y") {
-    echo "OK...aborting\n";
-    exit();
+    return $args;
 }
 
-//$conn = mysql_connect($host,$userid,$pword); //<---enter your host, user id and password for MySQL here
-$conn = mysqli_connect($host, $userid, $pword, $db);
+$args = parse_input();
 
-if ($conn==null) {
+$conn = mysqli_connect($args['host'], $args['userid'], $args['pword'], $args['db']);
+
+if ($conn == null) {
     echo "Could not connect to MySQL with the host/username/password you provided. Try again.\n";
     exit();
 }
@@ -51,29 +74,29 @@ if ($conn==null) {
 run_qry("SET FOREIGN_KEY_CHECKS = 0;");
 
 // Process each table clearing it.
-foreach (get_tables_list($clean) as $tbl) {
-    if (substr($tbl,0,1)!="#") {
-        $sql = "truncate table " . $company_number . "_" . $tbl ;
+foreach (get_tables_list($args['clean']) as $tbl) {
+    if (substr($tbl, 0, 1) != "#") {
+        $sql = "truncate table " . $args['company_number'] . "_" . $tbl;
         if (run_qry($sql)) {
-            echo "Cleared " . $company_number . "_" . $tbl . "\n";
+            echo "Cleared " . $args['company_number'] . "_" . $tbl . "\n";
         }
     }
 }
 
-run_qry("UPDATE `{$company_number}_meta_transactions` SET `next_trans_no` = 0;");
-run_qry("UPDATE `{$company_number}_debtors_master` SET `balance` = 0;");
-run_qry("DELETE FROM `{$company_number}_tasks` WHERE task_type IN (SELECT id FROM `{$company_number}_task_types` WHERE module_permission != 'HEAD_MENU_HR')");
-run_qry("DELETE FROM `{$company_number}_task_transitions` WHERE task_id NOT IN (SELECT id FROM `{$company_number}_tasks`)");
+run_qry("UPDATE `{$args['company_number']}_meta_transactions` SET `next_trans_no` = 0;");
+run_qry("UPDATE `{$args['company_number']}_debtors_master` SET `balance` = 0;");
+run_qry("DELETE FROM `{$args['company_number']}_tasks` WHERE task_type IN (SELECT id FROM `{$args['company_number']}_task_types` WHERE module_permission != 'HEAD_MENU_HR')");
+run_qry("DELETE FROM `{$args['company_number']}_task_transitions` WHERE task_id NOT IN (SELECT id FROM `{$args['company_number']}_tasks`)");
 
-run_qry("DELETE FROM `{$company_number}_calendar_events` WHERE type_id IN (3, 4, 5) ");
-run_qry("DELETE FROM `{$company_number}_notifications` WHERE `data` IS NOT NULL  AND JSON_CONTAINS_PATH(`data`, 'one', '$.contractId')");
+run_qry("DELETE FROM `{$args['company_number']}_calendar_events` WHERE type_id IN (3, 4, 5) ");
+run_qry("DELETE FROM `{$args['company_number']}_notifications` WHERE `data` IS NOT NULL  AND JSON_CONTAINS_PATH(`data`, 'one', '$.contractId')");
 
-if ($clean) {
-    truncate_except(1, 'branch_code', "{$company_number}_cust_branch");
-    truncate_except(1, 'debtor_no', "{$company_number}_debtors_master");
-    truncate_except(1, 'id', "{$company_number}_users");
-    truncate_except(-1, 'salesman_code', "{$company_number}_salesman");
-    run_qry("UPDATE `{$company_number}_sys_prefs` SET `value` = '-1' WHERE `name` IN ("
+if ($args['clean']) {
+    truncate_except(1, 'branch_code', "{$args['company_number']}_cust_branch");
+    truncate_except(1, 'debtor_no', "{$args['company_number']}_debtors_master");
+    truncate_except(1, 'id', "{$args['company_number']}_users");
+    truncate_except(-1, 'salesman_code', "{$args['company_number']}_salesman");
+    run_qry("UPDATE `{$args['company_number']}_sys_prefs` SET `value` = '-1' WHERE `name` IN ("
         . " 'default_shift_id',"
         . " 'dep_amer',"
         . " 'dep_tadbeer',"
@@ -84,9 +107,9 @@ if ($clean) {
         . " 'ts_auto_stock_category',"
         . " 'ts_next_auto_stock_no'"
     . ")");
-    run_qry("UPDATE `{$company_number}_pay_elements` SET `account_code` = NULL");
-    run_qry("DELETE FROM `{$company_number}_entity_groups` WHERE category != 1");
-    set_auto_increment('id', "{$company_number}_entity_groups");
+    run_qry("UPDATE `{$args['company_number']}_pay_elements` SET `account_code` = NULL");
+    run_qry("DELETE FROM `{$args['company_number']}_entity_groups` WHERE category != 1");
+    set_auto_increment('id', "{$args['company_number']}_entity_groups");
 }
 
 run_qry("SET FOREIGN_KEY_CHECKS = 1;");
@@ -98,11 +121,11 @@ exit();
 function run_qry($sql) {
     global $conn;
 
-    $result = mysqli_query($conn, $sql ) ;
+    $result = mysqli_query($conn, $sql);
 
     if (!$result) {
         echo "Warning: SQL statement " . $sql . " failed\n";
-        echo "with an error message of " .mysqli_connect_errno() . mysqli_error($conn);
+        echo "with an error message of " . mysqli_connect_errno() . mysqli_error($conn);
         return false;
     }
 
@@ -280,7 +303,6 @@ function get_tables_list($clean) {
 
     return $clean ? array_merge($transaction_tables, $master_tables) : $transaction_tables;
 }
-
 
 /**
  * Returns a quoted string
