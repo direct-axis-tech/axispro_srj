@@ -33,7 +33,7 @@ return [
     | for informational purposes
     |
     */
-    'instance_created_at' => null,
+    'instance_created_at' => '2025-03-06T10:24:22+00:00',
 
     /*
     |--------------------------------------------------------------------------
