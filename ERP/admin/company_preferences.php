@@ -731,14 +731,15 @@ check_row('Enable Leave Accrual Scheduler', 'is_leave_accrual_scheduler_enabled'
 check_row('Enable Auto Allocation Scheduler', 'is_auto_alloc_scheduler_enabled');
 check_row('Enable Gratuity Accrual Scheduler', 'is_gratuity_accrual_scheduler_enabled');
 
+$tz = Carbon::now()->getTimezone();
 table_section_title(trans("Version Information"));
 if ($instanceCreatedAt = config('app.instance_created_at')) {
-	label_row(trans("Instance Created At"), Carbon::parse($instanceCreatedAt)->toDayDateTimeString());
+	label_row(trans("Instance Created At"), Carbon::parse($instanceCreatedAt)->setTimezone($tz)->toDayDateTimeString());
 }
 label_row(trans("Source Version"), $GLOBALS['src_version'] ?? '--');
 label_row(trans("Database Scheme Version"), $_POST['version_id']);
 label_row(trans("Core Version"), config('app.version'));
-label_row(trans("Core Version Updated At"), Carbon::parse(config('app.version_updated_at'))->toDayDateTimeString());
+label_row(trans("Core Version Updated At"), Carbon::parse(config('app.version_updated_at'))->setTimezone($tz)->toDayDateTimeString());
 
 end_outer_table(1);
 
