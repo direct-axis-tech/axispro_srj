@@ -51,6 +51,7 @@ function insertOneEmployee($employee) {
         'labour_card_no',
         'emirates_id',
         'updated_by',
+        'personal_email',
     ]);
 
     $requiredColumns = array_flip([
@@ -65,6 +66,7 @@ function insertOneEmployee($employee) {
         'mobile_no',
         'date_of_join',
         'mode_of_pay',
+        'personal_email',
     ]);
 
     $inputs = array_intersect_key($employee, $requiredColumns);
@@ -318,6 +320,7 @@ function updateEmployee($employeeId, $updates = []) {
         'labour_card_no',
         'emirates_id',
         'updated_by',
+        'personal_email',
     ];
 
     $inputs = [];

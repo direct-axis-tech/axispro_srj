@@ -149,6 +149,7 @@
                         render: data => (storage.maritalStatuses[data] ?? null)
                     },
                     {data: 'email', title: 'Email'},
+                    {data: 'personal_email', title: 'Personal Email'},
                     {data: 'mobile_no', title: 'Mobile No.'},
                     {
                         data: 'date_of_join',

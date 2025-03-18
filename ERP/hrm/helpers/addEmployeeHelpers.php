@@ -74,7 +74,8 @@ class AddEmployeeHelper {
                 'date_of_birth',
                 'email',
                 'mobile_no',
-                'mode_of_pay'
+                'mode_of_pay',
+                'personal_email'
             ],
             "job" => [
                 'department_id',
@@ -161,6 +162,9 @@ class AddEmployeeHelper {
             $errors['emp']['passport_no'] = "The passport number should not be empty";
         }
         
+        if (!filter_var($_POST['emp']['personal_email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['emp']['personal_email'] = "This is not a valid email address";
+        }
         foreach ([
             'passport_no' => ['passport number', $pattern['alpha_num']],
             'emirates_id' => ['emirates id number', '/^784-\d{4}-\d{7}-\d$/'],

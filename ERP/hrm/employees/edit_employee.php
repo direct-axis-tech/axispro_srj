@@ -311,6 +311,18 @@ page(trans('Update Employee'), false, false, '', '', false, '', true); ?>
                             </div>
                         </div>
                         <div class="form-group row required">
+                            <label for="personal_email" class="col-form-label col-sm-3">Personal Email ID:</label>
+                            <div class="col-sm-9 col-md-6 col-lg-4">
+                                <input
+                                    required
+                                    type="email"
+                                    class="form-control"
+                                    name="emp[personal_email]"
+                                    id="personal_email"
+                                    value="<?= $employee['personal_email'] ?>">
+                            </div>
+                        </div>
+                        <div class="form-group row required">
                             <label for="mobile_no" class="col-form-label col-sm-3">Mobile Number:</label>
                             <div class="col-sm-9 col-md-6 col-lg-4">
                                 <div class="input-group">

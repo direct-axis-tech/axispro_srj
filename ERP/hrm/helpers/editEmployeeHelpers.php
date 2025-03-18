@@ -67,7 +67,8 @@ class EditEmployeeHelper {
                 'date_of_birth',
                 'email',
                 'mobile_no',
-                'mode_of_pay'
+                'mode_of_pay',
+                'personal_email'
             ],
             "job" => [
                 'id',
@@ -135,6 +136,10 @@ class EditEmployeeHelper {
 
         if (!filter_var($_POST['emp']['email'], FILTER_VALIDATE_EMAIL)) {
             $errors['emp']['email'] = "This is not a valid email address";
+        }
+
+        if (!filter_var($_POST['emp']['personal_email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['emp']['personal_email'] = "This is not a valid email address";
         }
 
         if (!preg_match(UAE_MOBILE_NO_PATTERN, $_POST['emp']['mobile_no'])) {

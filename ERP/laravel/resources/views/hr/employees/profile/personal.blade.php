@@ -119,6 +119,20 @@
         </div>
         <!--end::Input group-->
 
+         <!--begin::Input group-->
+         <div class="row mb-7">
+            <!--begin::Label-->
+            <label class="col-lg-4 fw-bold text-muted">{{ __('Personal Email Address') }}</label>
+            <!--end::Label-->
+
+            <!--begin::Col-->
+            <div class="col-lg-8">
+                <a href="#" class="fw-bold fs-6 text-dark text-hover-primary">{{ $employee->personal_email }}</a>
+            </div>
+            <!--end::Col-->
+        </div>
+        <!--end::Input group-->
+
         <!--begin::Row-->
         <div class="row mb-7">
             <!--begin::Label-->
